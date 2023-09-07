@@ -11,6 +11,6 @@ import lombok.Data;
 @AllArgsConstructor
 @JsonInclude(Include.NON_NULL)
 public class CreditResponseDto {
-	private Credit credit;
 	private String message;
+	private Credit credit;
 }

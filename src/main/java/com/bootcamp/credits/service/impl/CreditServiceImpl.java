@@ -1,7 +1,6 @@
 package com.bootcamp.credits.service.impl;
 
-import java.util.Date;
-
+import java.time.LocalDateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -61,13 +60,13 @@ public class CreditServiceImpl implements CreditService{
 	@Override
 	public Mono<CreditResponseDto> createCreditPerson(CreditRequestDto creditRequestDto) {
 		Credit credit = new Credit(null,creditRequestDto.getCustomerId(), 3, "CRED_PERSONAL"
-				, creditRequestDto.getCreditAmount() , 0.0, creditRequestDto.getCreditDate(), creditRequestDto.getTypeCustomer());
+				, creditRequestDto.getCreditAmount() , 0.0, LocalDateTime.now(), creditRequestDto.getTypeCustomer());
 		return customerRestClient.getPersonById(creditRequestDto.getCustomerId()).flatMap(c ->{
 			credit.setTypeCustomer(c.getTypeCustomer());
 			return getCreditByIdCustomerPerson(creditRequestDto.getCustomerId(),credit.getDescripTypeAccount(),c.getTypeCustomer()).flatMap(v -> {
-				return Mono.just(new CreditResponseDto(null, "Personal client already has a personal credit: "+credit.getDescripTypeAccount()));
+				return Mono.just(new CreditResponseDto("Personal client already has a personal credit: "+credit.getDescripTypeAccount(), null));
 			}).switchIfEmpty(saveNewAccount(credit, "Credit created successfully"));
-		}).defaultIfEmpty(new CreditResponseDto(null, "Client does not exist"));
+		}).defaultIfEmpty(new CreditResponseDto("Client does not exist", null));
 	}
 	
 	/**
@@ -80,11 +79,11 @@ public class CreditServiceImpl implements CreditService{
 	@Override
 	public Mono<CreditResponseDto> createCreditCompany(CreditRequestDto creditRequestDto) {
 		Credit credit = new Credit(null,creditRequestDto.getCustomerId(), 4, "CRED_EMPRESARIAL"
-				, creditRequestDto.getCreditAmount() , 0.0, creditRequestDto.getCreditDate(), creditRequestDto.getTypeCustomer());
+				, creditRequestDto.getCreditAmount() , 0.0, LocalDateTime.now(), creditRequestDto.getTypeCustomer());
 		return customerRestClient.getCompanyById(creditRequestDto.getCustomerId()).flatMap(c ->{
 			credit.setTypeCustomer(c.getTypeCustomer());
 			return saveNewAccount(credit, "Credit created successfully");
-		}).defaultIfEmpty(new CreditResponseDto(null, "Client does not exist"));
+		}).defaultIfEmpty(new CreditResponseDto("Client does not exist", null));
 		
 	}
 
@@ -136,12 +135,12 @@ public class CreditServiceImpl implements CreditService{
 		return creditRepository.findById(creditRequestDto.getId()).flatMap(uCredit -> {
 			Double newAmount = uCredit.getExistingAmount() + creditRequestDto.getAmount();
 			if(newAmount > uCredit.getCreditAmount()) {
-				return Mono.just(new CreditResponseDto(null, "Payment exceeds the limit"));
+				return Mono.just(new CreditResponseDto("Payment exceeds the limit", null));
 			}else {
 				uCredit.setExistingAmount(newAmount);
 				return updateAccount(uCredit, creditRequestDto.getAmount(), "PAGO");
 			}
-		}).defaultIfEmpty(new CreditResponseDto(null, "Credit does not exist"));
+		}).defaultIfEmpty(new CreditResponseDto("Credit does not exist", null));
 	}
 	
 	/**
@@ -162,8 +161,10 @@ public class CreditServiceImpl implements CreditService{
 	 * @return Mono<CreditResponseDto>
 	 */
 	public Mono<CreditResponseDto> saveNewAccount(Credit credit, String message) {
-		return creditRepository.save(credit).flatMap(x -> {
-			return Mono.just(new CreditResponseDto(credit, message));
+		return creditRepository.save(credit).flatMap(saveCredit -> {
+			return registerTransaction(saveCredit, saveCredit.getExistingAmount(),"APERTURA").flatMap(t1 -> {
+				return Mono.just(new CreditResponseDto(message, saveCredit));
+			});
 		});
 	}
 	
@@ -190,7 +191,7 @@ public class CreditServiceImpl implements CreditService{
 	public Mono<Credit> getCreditByIdCustomerPerson(String customerId, String type, String customer) {
 		return creditRepository.findAll()
 				.filter(c -> c.getCustomerId().equals(customerId))
-				.filter(c -> c.getDescripTypeAccount().equals("CRED_PERSONAL"))
+				.filter(c -> c.getDescripTypeAccount().equals(type))
 				.filter(c -> c.getTypeCustomer().equals(customer))
 				.next();
 	}
@@ -209,10 +210,11 @@ public class CreditServiceImpl implements CreditService{
 		transaction.setProductType(credit.getDescripTypeAccount());
 		transaction.setTransactionType(typeTransaction);
 		transaction.setAmount(amount);
-		transaction.setTransactionDate(new Date());
+		transaction.setTransactionDate(LocalDateTime.now());
 		transaction.setCustomerType(credit.getTypeCustomer());
+		transaction.setBalance(credit.getExistingAmount());
 		return transactionRestClient.createTransaction(transaction).flatMap(t -> {
-			return Mono.just(new CreditResponseDto(credit, "Successful transaction"));
+			return Mono.just(new CreditResponseDto("Successful transaction", credit));
         });
 	}
 

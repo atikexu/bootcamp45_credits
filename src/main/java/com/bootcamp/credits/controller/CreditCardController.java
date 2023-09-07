@@ -1,6 +1,7 @@
 package com.bootcamp.credits.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -50,7 +51,7 @@ public class CreditCardController {
 	 * @param creditCardRequestDto
 	 * @return Mono<CreditCardResponseDto>
 	 */
-	@PostMapping("/person")
+	@PostMapping(value = "/person", consumes= MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public Mono<CreditCardResponseDto> createCreditCardPerson(@RequestBody CreditCardRequestDto creditCardRequestDto){
 		return creditcardService.createCreditCardPerson(creditCardRequestDto);
     }
@@ -60,7 +61,7 @@ public class CreditCardController {
 	 * @param creditCardRequestDto
 	 * @return Mono<CreditCardResponseDto>
 	 */
-	@PostMapping("/company")
+	@PostMapping(value = "/company", consumes= MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public Mono<CreditCardResponseDto> createCreditCardCompany(@RequestBody CreditCardRequestDto creditCardRequestDto){
 		return creditcardService.createCreditCardCompany(creditCardRequestDto);
     }
@@ -70,7 +71,7 @@ public class CreditCardController {
 	 * @param creditCardRequestDto
 	 * @return Mono<CreditCard>
 	 */
-	@PutMapping
+	@PutMapping(consumes= MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public Mono<CreditCard> updateCCreditCard(@RequestBody CreditCardRequestDto creditCardRequestDto){
 		return creditcardService.updateCreditCard(creditCardRequestDto);
     }
@@ -90,7 +91,7 @@ public class CreditCardController {
 	 * @param creditCardRequestDto
 	 * @return Mono<CreditCardResponseDto>
 	 */
-	@PostMapping("/pay")
+	@PostMapping(value = "/pay", consumes= MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public Mono<CreditCardResponseDto> payCreditCard(@RequestBody CreditCardRequestDto creditCardRequestDto){
 		return creditcardService.payCreditCard(creditCardRequestDto);
     }
@@ -100,7 +101,7 @@ public class CreditCardController {
 	 * @param creditCardRequestDto
 	 * @return Mono<CreditCardResponseDto>
 	 */
-	@PostMapping("/consume")
+	@PostMapping(value = "/consume", consumes= MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public Mono<CreditCardResponseDto> consumeCreditCard(@RequestBody CreditCardRequestDto creditCardRequestDto){
 		return creditcardService.consumeCreditCard(creditCardRequestDto);
     }

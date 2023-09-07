@@ -1,7 +1,6 @@
 package com.bootcamp.credits.service.impl;
 
-import java.util.Date;
-
+import java.time.LocalDateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -9,6 +8,7 @@ import com.bootcamp.credits.clients.CustomerRestClient;
 import com.bootcamp.credits.clients.TransactionsRestClient;
 import com.bootcamp.credits.dto.CreditCardRequestDto;
 import com.bootcamp.credits.dto.CreditCardResponseDto;
+import com.bootcamp.credits.dto.CreditResponseDto;
 import com.bootcamp.credits.dto.Message;
 import com.bootcamp.credits.dto.Transaction;
 import com.bootcamp.credits.entity.CreditCard;
@@ -59,11 +59,11 @@ public class CreditCardServiceImpl implements CreditCardService{
 	@Override
 	public Mono<CreditCardResponseDto> createCreditCardPerson(CreditCardRequestDto creditCardRequestDto) {
 		CreditCard creditCard = new CreditCard(null,creditCardRequestDto.getCustomerId(), 5, "TAR_CRED_PERSONAL", creditCardRequestDto.getCreditAmount()
-				, creditCardRequestDto.getCreditAmount(), creditCardRequestDto.getCreditDate(), creditCardRequestDto.getNumberCard(), null);
+				, creditCardRequestDto.getCreditAmount(), LocalDateTime.now(), creditCardRequestDto.getNumberCard(), null);
 		return customerRestClient.getPersonById(creditCardRequestDto.getCustomerId()).flatMap(c ->{
 			creditCard.setTypeCustomer(c.getTypeCustomer());
 			return saveNewAccount(creditCard, "CreditCard created successfully");
-		}).defaultIfEmpty(new CreditCardResponseDto(null, "Client does not exist"));
+		}).defaultIfEmpty(new CreditCardResponseDto("Client does not exist", null));
 	}
 	
 	/**
@@ -76,11 +76,11 @@ public class CreditCardServiceImpl implements CreditCardService{
 	@Override
 	public Mono<CreditCardResponseDto> createCreditCardCompany(CreditCardRequestDto creditCardRequestDto) {
 		CreditCard creditCard = new CreditCard(null,creditCardRequestDto.getCustomerId(), 6, "TAR_CRED_EMPRESARIAL", creditCardRequestDto.getCreditAmount()
-				, creditCardRequestDto.getCreditAmount(), creditCardRequestDto.getCreditDate(), creditCardRequestDto.getNumberCard(), null);
+				, creditCardRequestDto.getCreditAmount(), LocalDateTime.now(), creditCardRequestDto.getNumberCard(), null);
 		return customerRestClient.getCompanyById(creditCardRequestDto.getCustomerId()).flatMap(c ->{
 			creditCard.setTypeCustomer(c.getTypeCustomer());
 			return saveNewAccount(creditCard, "CreditCard created successfully");
-		}).defaultIfEmpty(new CreditCardResponseDto(null, "Client does not exist"));
+		}).defaultIfEmpty(new CreditCardResponseDto("Client does not exist", null));
 	}
 
 	/**
@@ -132,12 +132,12 @@ public class CreditCardServiceImpl implements CreditCardService{
 		return creditCardRepository.findById(creditRequestDto.getId()).flatMap(uCredit -> {
 			Double newAmount = uCredit.getExistingAmount() + creditRequestDto.getAmount();
 			if(newAmount > uCredit.getCreditAmount()) {
-				return Mono.just(new CreditCardResponseDto(null, "Payment exceeds the limit"));
+				return Mono.just(new CreditCardResponseDto("Payment exceeds the limit", null));
 			}else {
 				uCredit.setExistingAmount(newAmount);
 				return updateAccount(uCredit, creditRequestDto.getAmount(), "PAGO");
 			}
-		}).defaultIfEmpty(new CreditCardResponseDto(null, "CreditCard does not exist"));
+		}).defaultIfEmpty(new CreditCardResponseDto("CreditCard does not exist", null));
 	}
 
 	/**
@@ -153,12 +153,12 @@ public class CreditCardServiceImpl implements CreditCardService{
 		return creditCardRepository.findById(creditRequestDto.getId()).flatMap(uCredit -> {
 			Double newAmount = uCredit.getExistingAmount() - creditRequestDto.getAmount();
 			if(newAmount<0) {
-				return Mono.just(new CreditCardResponseDto(null, "You don't have enough balance"));
+				return Mono.just(new CreditCardResponseDto("You don't have enough balance", null));
 			}else {
 				uCredit.setExistingAmount(newAmount);
 				return updateAccount(uCredit, creditRequestDto.getAmount(), "CONSUMO");
 			}
-		}).defaultIfEmpty(new CreditCardResponseDto(null, "CreditCard does not exist"));
+		}).defaultIfEmpty(new CreditCardResponseDto("CreditCard does not exist", null));
 	}
 	
 	/**
@@ -179,8 +179,10 @@ public class CreditCardServiceImpl implements CreditCardService{
 	 * @return Mono<CreditCardResponseDto>
 	 */
 	private Mono<CreditCardResponseDto> saveNewAccount(CreditCard creditCard, String message) {
-		return creditCardRepository.save(creditCard).flatMap(x -> {
-			return Mono.just(new CreditCardResponseDto(creditCard, message));
+		return creditCardRepository.save(creditCard).flatMap(saveCreditCard -> {
+			return registerTransaction(saveCreditCard, saveCreditCard.getExistingAmount(),"APERTURA").flatMap(t1 -> {
+				return Mono.just(new CreditCardResponseDto(message, saveCreditCard));
+			});
 		});
 	}
 	
@@ -211,10 +213,11 @@ public class CreditCardServiceImpl implements CreditCardService{
 		transaction.setProductType(creditCard.getDescripTypeAccount());
 		transaction.setTransactionType(typeTransaction);
 		transaction.setAmount(amount);
-		transaction.setTransactionDate(new Date());
+		transaction.setTransactionDate(LocalDateTime.now());
 		transaction.setCustomerType(creditCard.getTypeCustomer());
+		transaction.setBalance(creditCard.getExistingAmount());
 		return transactionRestClient.createTransaction(transaction).flatMap(t -> {
-			return Mono.just(new CreditCardResponseDto(creditCard, "Successful transaction"));
+			return Mono.just(new CreditCardResponseDto("Successful transaction", creditCard));
         });
 	}
 

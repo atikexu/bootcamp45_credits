@@ -1,6 +1,7 @@
 package com.bootcamp.credits.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -50,7 +51,7 @@ public class CreditController {
 	 * @param creditRequestDto
 	 * @return Mono<CreditResponseDto>
 	 */
-	@PostMapping("/person")
+	@PostMapping(value = "/person" ,consumes= MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public Mono<CreditResponseDto> createCreditPerson(@RequestBody CreditRequestDto creditRequestDto){
 		return creditService.createCreditPerson(creditRequestDto);
     }
@@ -60,7 +61,7 @@ public class CreditController {
 	 * @param creditRequestDto
 	 * @return Mono<CreditResponseDto>
 	 */
-	@PostMapping("/company")
+	@PostMapping(value = "/company", consumes= MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public Mono<CreditResponseDto> createCreditCompany(@RequestBody CreditRequestDto creditRequestDto){
 		return creditService.createCreditCompany(creditRequestDto);
     }
@@ -70,7 +71,7 @@ public class CreditController {
 	 * @param creditRequestDto
 	 * @return Mono<Credit>
 	 */
-	@PutMapping
+	@PutMapping(consumes= MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public Mono<Credit> updateCredit(@RequestBody CreditRequestDto creditRequestDto){
 		return creditService.updateCredit(creditRequestDto);
     }
@@ -90,7 +91,7 @@ public class CreditController {
 	 * @param creditRequestDto
 	 * @return Mono<CreditResponseDto>
 	 */
-	@PostMapping("/pay")
+	@PostMapping(value = "/pay", consumes= MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public Mono<CreditResponseDto> payCredit(@RequestBody CreditRequestDto creditRequestDto){
 		return creditService.payCredit(creditRequestDto);
     }

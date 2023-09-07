@@ -11,6 +11,6 @@ import lombok.Data;
 @AllArgsConstructor
 @JsonInclude(Include.NON_NULL)
 public class CreditCardResponseDto {
-	private CreditCard creditcard;
 	private String message;
+	private CreditCard creditcard;
 }

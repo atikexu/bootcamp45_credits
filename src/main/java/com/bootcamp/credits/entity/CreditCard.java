@@ -1,6 +1,6 @@
 package com.bootcamp.credits.entity;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -22,7 +22,7 @@ public class CreditCard {
 	private String descripTypeAccount;
 	private Double creditAmount;
 	private Double existingAmount;
-	private Date creditDate;
+	private LocalDateTime creditDate;
 	private String numberCard;
 	private String typeCustomer;
 }
